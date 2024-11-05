@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faChevronUp } from '@fortawesome/react-fontawesome';
 
 function CollapsibleSection({ title, content, defaultOpen = true }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
