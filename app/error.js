@@ -19,7 +19,7 @@ export default function Error({ error, reset }) {
                     <div className="flex space-x-4">
                         <button
                             onClick={() => reset()}
-                            className="px-8 py-3 font-semibold rounded bg-green-600 dark:bg-green-600 dark:text-gray-50"
+                            className="px-8 py-3 font-semibold rounded bg-[#ff4f1a] dark:bg-green-600 dark:text-gray-50"
                         >
                             Try again
                         </button>

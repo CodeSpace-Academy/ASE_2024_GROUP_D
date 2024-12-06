@@ -54,12 +54,12 @@ export default function Pagination({ currentPage, totalPages }) {
                     key={1}
                     // Navigate to the first page
                     onClick={() => onPageChange(1)}
-                    className={`items-center justify-center w-8 h-8 text-sm border rounded-full shadow-md ${page === 1
-                        ? "bg-green-600 text-white font-semibold" // Active page styling
-                        : "bg-white text-green-600 border-green-600 hover:bg-green-100" // Default button styling
+                    className={`items-center justify-center w-8 h-8 text-sm  shadow-md ${page === 1
+                        ? "bg-white text-[#020123] font-semibold" // Active page styling
+                        : "bg-white text-[#020123] border-[#fc9d4f] hover:bg-[#edd282]" // Default button styling
                         }`}
                 >
-                    1
+                    
                 </button>
             );
         }
@@ -79,9 +79,9 @@ export default function Pagination({ currentPage, totalPages }) {
                 <button
                     key={i}
                     onClick={() => onPageChange(i)} // Navigate to the clicked page
-                    className={`items-center justify-center w-8 h-8 text-sm border rounded-full shadow-md ${page === i
-                        ? "bg-green-600 text-white font-semibold" // Active page styling
-                        : "bg-white text-green-600 border-green-600 hover:bg-green-100" // Default button styling
+                    className={`items-center justify-center w-8 h-8 text-sm   shadow-md ${page === i
+                        ? "bg-[#edd282] text-[#020123] font-semibold" // Active page styling
+                        : "bg-[#fc8f36] text-[#020123] border-[#ff4f1a] hover:bg-[#edd282]" // Default button styling
                         }`}
                 >
                     {i}
@@ -100,9 +100,9 @@ export default function Pagination({ currentPage, totalPages }) {
                 <button
                     key={totalPages}
                     onClick={() => onPageChange(totalPages)} // Navigate to the last page
-                    className={`items-center justify-center w-8 h-8 text-sm border rounded-full shadow-md ${page === totalPages
-                        ? "bg-green-600 text-white font-semibold" // Active page styling
-                        : "bg-white text-green-600 border-green-600 hover:bg-green-100" // Default button styling
+                    className={`items-center justify-center w-8 h-8 text-sm  shadow-md ${page === totalPages
+                        ? "bg-white text-[#020123] font-semibold" // Active page styling
+                        : "bg-white text-[#020123] border-[#ff4f1a] hover:bg-[#edd282]" // Default button styling
                         }`}
                 >
                     {totalPages}
@@ -121,9 +121,9 @@ export default function Pagination({ currentPage, totalPages }) {
                 type="button"
                 disabled={page === 1} // Disable if on the first page
                 onClick={() => onPageChange(page - 1)} // Navigate to the previous page
-                className={`inline-flex items-center justify-center w-8 h-8 border rounded-full shadow-md ${page === 1
+                className={`inline-flex items-center justify-center w-8 h-8  shadow-md ${page === 1
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed" // Disabled button styling
-                    : "bg-white text-green-600 border-green-600 hover:bg-green-100" // Enabled button styling
+                    : "bg-white text-[#020123] border-[#ff4f1a] hover:bg-[#edd282]" // Enabled button styling
                     }`}
             >
                 {/* Icon for previous arrow */}
@@ -149,9 +149,9 @@ export default function Pagination({ currentPage, totalPages }) {
                 type="button"
                 disabled={page === totalPages} // Disable if on the last page
                 onClick={() => onPageChange(page + 1)} // Navigate to the next page
-                className={`inline-flex items-center justify-center w-8 h-8 border rounded-full shadow-md ${page === totalPages
+                className={`inline-flex items-center justify-center w-8 h-8  shadow-md ${page === totalPages
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed" // Disabled button styling
-                    : "bg-white text-green-600 border-green-600 hover:bg-green-100" // Enabled button styling
+                    : "bg-white text-[#020123] border-[#ff4f1a] hover:bg-[#edd282]" // Enabled button styling
                     }`}
             >
                 {/* Icon for next arrow */}

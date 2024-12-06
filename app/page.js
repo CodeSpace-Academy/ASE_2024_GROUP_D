@@ -1,48 +1,62 @@
-import { fetchRecipes } from './api';
-import Pagination from './components/pagination';
-import Recipes from './components/recipes';
-import Footer from './components/footer';
-import Loading from './components/loading';
-import SearchBar from './components/searchBar';
+import { fetchRecipes } from "./api";
+import { Suspense } from "react";
+import Pagination from "./components/pagination";
+import Recipes from "./components/recipes";
+import Footer from "./components/ui/footer";
+import Loading from "./loading";
+import RecipeCarousel from "./components/RecipeCarousel";
+import RegisterServiceWorker from "./components/RegisterServiceWorker";
 
 export default async function Home({ searchParams }) {
-    // Initialize recipes object to store fetched data
     let recipes = {};
-    // Initialize error variable to capture any error messages
     let error = null;
 
-    // Determine the current page from search parameters, defaulting to 1
     const page = searchParams.page ? parseInt(searchParams.page) : 1;
+    const sort = searchParams.sort || "";
+    const order = searchParams.order || "desc";
+    const search = searchParams.search || "";
+    const tags = searchParams.tags || "";
+    const category = searchParams.category || "";
+    const ingredients = searchParams.ingredients || "";
+    const instructions = searchParams.instructions || "";
 
     try {
-        // Fetch recipes from the API with a limit of 20 per page
-        recipes = await fetchRecipes(20, page);
-    } catch (error) {
-        // Capture any error that occurs during the fetch
-        error = error.message; // Store the error message
+        recipes = await fetchRecipes(
+            20,
+            page,
+            search,
+            tags,
+            category,
+            ingredients,
+            instructions,
+            sort,
+            order
+        );
+    } catch (err) {
+        error = err.message;
     }
 
-    if(recipes.recipes.length === 0 && !error) {
-        return <Loading />;
-    }
-
-    // Return the rendered JS for the Home component
     return (
         <>
-            <SearchBar
-            
-            />
-            {/* Render the Recipes component, passing the fetched recipes as props */}
-            <Recipes recipes={recipes.recipes} />
-            {/* Render the Pagination component, passing the current page and total pages */}
-            <Pagination
-                currentPage={recipes.currentPage} // Current page number
-                totalPages={recipes.totalPages} // Total number of pages available
-                
-            />
-            
-            <Footer />
-           
+            <RegisterServiceWorker />
+
+            <RecipeCarousel />
+
+            <Suspense fallback={<Loading />}>
+                {/* Render the Recipes component */}
+                <Recipes
+                    recipes={recipes.recipes}
+                    initialSort={sort}
+                    initialOrder={order}
+                />
+
+                {/* Render the Pagination component, passing the current page and total pages */}
+                <Pagination
+                    currentPage={recipes.currentPage} // Current page number
+                    totalPages={recipes.totalPages} // Total number of pages available
+                />
+                <Footer />
+            </Suspense>
         </>
     );
 }

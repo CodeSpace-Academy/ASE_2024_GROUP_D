@@ -1,48 +1,172 @@
-const { MongoClient } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 
-// MongoDB connection URI
-const uri = 'mongodb+srv://group-d:p0FlVQ6DhVbkZrYV@cluster0.knrq5.mongodb.net/';
 
-const client = new MongoClient(uri, {
-  maxPoolSize: 50,
-  connectTimeoutMS: 5000,
-  retryWrites: true,
-});
+if (!process.env.MONGODB_URI) {
+  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
+}
 
-let cachedDb = null; // Use caching to avoid reconnecting on every request
+const uri = process.env.MONGODB_URI;
+const options = {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    deprecationErrors: true,
+  },
+  maxPoolSize: 20, // Maximum pool size
+};
 
-/**
- * Connect to the MongoDB database.
- *
- * This function establishes a connection to the MongoDB database, reusing an existing 
- * connection if one is already cached. It returns the database instance for use in 
- * further database operations.
- *
- * @returns {Promise<Db>} A promise that resolves to the database instance.
- *
- * @throws {Error} Throws an error if the connection to the database fails.
- */
+const env = process.env.NODE_ENV;
+
+let clientPromise;
+
+if (env === 'development') {
+  if (!global._mongoClientPromise) {
+    const client = new MongoClient(uri, options);
+    global._mongoClientPromise = client.connect();
+  }
+  clientPromise = global._mongoClientPromise;
+} else {
+  const client = new MongoClient(uri, options);
+  clientPromise = client.connect();
+}
+
+let cachedDb = null; // Cache database instance for reuse
+
 async function connectToDatabase() {
+  const client = await clientPromise;
+  const db = client.db('devdb');
+
+  if (cachedDb) {
+    return cachedDb;
+  }
+  cachedDb = db; // Caches the DB connection for future requests
+  
+  // Ensure indexes and reviews setup
+  await initializeIndexes(db);
+  await checkAndCreateReviews(db);
+  
+  return db;
+}
+
+async function initializeIndexes(db) {
+  const collection = db.collection('recipes');
+  const errors = [];
+
   try {
-    if (cachedDb) {
-      return cachedDb; // Return the cached DB if already connected
+    const existingIndexes = await collection.listIndexes().toArray();
+    const indexNames = existingIndexes.map((index) => index.name);
+
+    if (indexNames.includes('recipe_search_index')) {
+      try {
+        await collection.dropIndex('recipe_search_index');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } catch (error) {
+        if (error.code !== 27) {
+          errors.push(`Failed to drop index recipe_search_index: ${error.message}`);
+        }
+      }
     }
 
-    await client.connect();
-    console.log('Connected to MongoDB!');
+    const indexOperations = [
+      {
+        operation: async () => {
+          try {
+            await collection.createIndex(
+              { title: 'text', description: 'text', tags: 'text' },
+              {
+                weights: { title: 10, description: 5, tags: 3 },
+                name: 'recipe_search_index',
+                background: true,
+              }
+            );
+          } catch (error) {
+            if (error.code !== 85) {
+              throw error;
+            }
+          }
+        },
+        name: 'recipe_search_index',
+      },
+      {
+        operation: () => collection.createIndex({ category: 1 }, { background: true }),
+        name: 'category_index',
+      },
+      {
+        operation: () => collection.createIndex({ tags: 1 }, { background: true }),
+        name: 'tags_index',
+      },
+      {
+        operation: () => collection.createIndex({ 'ingredients.name': 1 }, { background: true }),
+        name: 'ingredients_index',
+      },
+      {
+        operation: () => collection.createIndex({ instructions: 1 }, { background: true }),
+        name: 'instructions_index',
+      },
+      {
+        operation: () => collection.createIndex({ category: 1, createdAt: -1 }, { background: true }),
+        name: 'category_date_index',
+      },
+      {
+        operation: () => collection.createIndex({ 'reviews.rating': 1, 'reviews.createdAt': -1 }, { background: true }),
+        name: 'Reviews compound index',
+      },
+      {
+        operation: () => collection.createIndex({ 'reviews.userId': 1 }, { background: true }),
+        name: 'Review user index',
+      },
+      {
+        operation: () => collection.createIndex({ averageRating: -1 }, { background: true }),
+        name: 'Average rating index',
+      },
+    ];
 
-    const db = client.db('devdb'); // Use your database name
-    cachedDb = db; // Cache the DB connection
+    for (const { operation, name } of indexOperations) {
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          await operation();
+          break;
+        } catch (error) {
+          retries--;
+          if (retries === 0) {
+            if (error.code !== 85) {
+              errors.push(`Failed to create index ${name}: ${error.message}`);
+            }
+          } else {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        }
+      }
+    }
 
-    // Create a text index on the title field of the recipes collection
-    await db.collection('recipes').createIndex({ title: "text" });
-    console.log('Text index created on title field of recipes collection.');
-
-    return db; // Return the database instance
-
+    if (errors.length > 0) {
+      console.error(`Index initialization completed with warnings: ${errors.join('; ')}`);
+    }
   } catch (error) {
-    console.error('MongoDB connection error:', error);
-    throw error; // Rethrow the error to handle it later
+    console.error(`Index initialization error: ${error.message}`);
+  }
+}
+
+async function checkAndCreateReviews(db) {
+  const collection = db.collection('recipes');
+
+  try {
+    const recipesWithoutReviews = await collection.find({ reviews: { $exists: false } }).toArray();
+    
+    if (recipesWithoutReviews.length > 0) {
+      const updatePromises = recipesWithoutReviews.map(recipe => {
+        return collection.updateOne(
+          { _id: recipe._id },
+          { $set: { reviews: [] } } // Create an empty array for reviews
+        );
+      });
+      await Promise.all(updatePromises);
+      console.log(`${updatePromises.length} recipes updated with empty reviews array.`);
+    } else {
+      console.log('No recipes without reviews found.');
+    }
+  } catch (error) {
+    console.error(`Error checking and creating reviews: ${error.message}`);
   }
 }
 

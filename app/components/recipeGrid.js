@@ -1,40 +1,76 @@
 import React from 'react';
-import Link from 'next/link'; // Import Link component to enable navigation
-import Image from 'next/image'; // Import Image component for optimized image loading
+import Link from 'next/link';
+import Image from 'next/image';
+import { FaClock } from "react-icons/fa";
 
-// Functional component 'Recipes' that accepts a 'recipe' prop
-const Recipes = ({ recipe }) => {
+const Recipes = ({ recipes }) => {
   return (
-    // Link component to navigate to a specific recipe page based on its ID
-    <Link
-      href={`/recipes/${recipe.id}`} // Dynamic route to the recipe's detail page
-      className="block p-4 bg-[#1C1C1C] border border-gray-700 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-800" // Tailwind classes for styling and hover effects
-    >
-      {/* Display recipe image with specific width, height, and object-fit styling */}
-      <Image
-        src={recipe.image} // Source of the image, coming from the recipe prop
-        alt={recipe.title} // Alternative text for the image
-        width={300} // Image width in pixels
-        height={200} // Image height in pixels
-        className="object-cover rounded-md" // Tailwind class for covering and rounding the image
-      />
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {recipes.map((recipe) => (
+          <Link
+            href={`/Recipe/${recipe._id}`}
+            key={recipe._id}
+            className="group block bg-white dark:border-gray-950 rounded-lg overflow-hidden transform transition-transform duration-300 hover:scale-105"
+          >
+            {/* Image Container */}
+            <div className="relative w-full h-64">
+              {recipe.images && recipe.images[0] && (
+                <Image
+                  src={recipe.images[0]}
+                  alt={recipe.title}
+                  fill
+                  className="object-cover"
+                />
+              )}
+              {/* New Label if needed */}
+              {recipe.isNew && (
+                <div className="absolute top-4 right-4 bg-[#1e455c] text-white text-sm font-bold px-3 py-1 rounded">
+                  NEW
+                </div>
+              )}
+            </div>
 
-      {/* Recipe title */}
-      <h2 className="text-xl font-bold mt-8 text-orage">
-        {recipe.title} {/* Display the recipe title */}
-      </h2>
+            {/* Content Container */}
+            <div className="p-4">
+              {/* Title */}
+              <h2 className="text-[#1e455c] font-bold text-xl mb-2 group-hover:text-[#2b617f]">
+                {recipe.title}
+              </h2>
 
-      {/* Recipe category */}
-      <p className="text-sm text-gray-400 mt-1">
-        Category: {recipe.category} {/* Display the recipe category */}
-      </p>
+              {/* Time Information */}
+              <div className="flex items-center text-gray-600">
+                <FaClock className="mr-2" />
+                <span>
+                  {recipe.prep + recipe.cook} mins
+                </span>
+              </div>
 
-      {/* Recipe preparation time */}
-      <p className="text-sm text-gray-500">
-        Prep Time: {recipe.prep} mins {/* Display the preparation time */}
-      </p>
-    </Link>
+              {/* Tags */}
+              <div className="mt-3 flex gap-2">
+                {recipe.category && (
+                  <span className="inline-block bg-gray-100 text-gray-600 text-sm px-2 py-1 rounded">
+                    {recipe.category}
+                  </span>
+                )}
+                {recipe.isGlutenFree && (
+                  <span className="inline-block bg-gray-100 text-gray-600 text-sm px-2 py-1 rounded">
+                    GF
+                  </span>
+                )}
+                {recipe.isDairyFree && (
+                  <span className="inline-block bg-gray-100 text-gray-600 text-sm px-2 py-1 rounded">
+                    DF
+                  </span>
+                )}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 };
+
 
 export default Recipes;
